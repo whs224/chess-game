@@ -1,0 +1,6 @@
+# Flask - Python web framework for creating the API server
+Flask==2.3.3
+# Flask-CORS - Extension to handle Cross-Origin Resource Sharing (allows frontend to communicate with backend)
+Flask-CORS==4.0.0
+# Gunicorn - Production WSGI server for deploying Flask app to Heroku
+gunicorn==21.2.0 
