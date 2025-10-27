@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: basic global page style */
+body {
+  @apply bg-gray-100 text-gray-900 flex flex-col items-center justify-center min-h-screen;
+}
+
+h1 {
+  @apply text-3xl font-bold mb-6;
+}
