@@ -304,3 +304,31 @@ class Board:
                 if m.src == src and m.dst == dst and m.piece and m.piece.type == "P" and m.promotion == "Q":
                     return m
         return None
+        # --- Position tracking ---
+
+    def _position_key(self) -> str:
+        rows = []
+        for r in range(8):
+            empty = 0
+            row = []
+            for c in range(8):
+                p = self.board[r][c]
+                if p is None:
+                    empty += 1
+                else:
+                    if empty:
+                        row.append(str(empty))
+                        empty = 0
+                    row.append(p.symbol())
+            if empty:
+                row.append(str(empty))
+            rows.append("".join(row))
+        pieces = "/".join(rows)
+        cr = "".join(sorted(self.castling_rights)) or "-"
+        ep = coords_to_algebraic(self.en_passant) if self.en_passant else "-"
+        return f"{pieces} {self.turn} {cr} {ep}"
+
+    def _increment_position_count(self) -> None:
+        key = self._position_key()
+        self.position_counts[key] = self.position_counts.get(key, 0) + 1
+
