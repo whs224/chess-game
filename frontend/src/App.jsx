@@ -6,48 +6,51 @@ export default function App() {
   const [turn, setTurn] = useState("w");
   const [message, setMessage] = useState(""); // 🧩 New: for check/checkmate messages
 
-  // Fetch the board from backend
-  const fetchBoard = async () => {
-    try {
-      const res = await fetch("http://127.0.0.1:5000/api/board");
-      const data = await res.json();
-      setBoard(data.board);
-      setTurn(data.turn);
-      setMessage(data.message || ""); // optional message
-    } catch (err) {
-      console.error("Failed to fetch board:", err);
-    }
-  };
+  // ✅ Fetch the board
+const fetchBoard = async () => {
+  try {
+    const res = await fetch("https://chess-game-xl5i.onrender.com/api/board");
+    const data = await res.json();
+    setBoard(data.board);
+    setTurn(data.turn);
+    setMessage(data.message || "");
+  } catch (err) {
+    console.error("Failed to fetch board:", err);
+  }
+};
 
-  // Make a move
-  const handleMove = async (moveStr) => {
-    try {
-      const res = await fetch("http://127.0.0.1:5000/api/move", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ move: moveStr }),
-      });
-      const data = await res.json();
-      setBoard(data.board);
-      setTurn(data.turn);
-      setMessage(data.message || ""); // 🧠 show check/checkmate info
-    } catch (err) {
-      console.error("Move failed:", err);
-      setMessage("Move failed. Try again.");
-    }
-  };
+// ✅ Make a move
+const handleMove = async (moveStr) => {
+  try {
+    const res = await fetch("https://chess-game-xl5i.onrender.com/api/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ move: moveStr }),
+    });
+    const data = await res.json();
+    setBoard(data.board);
+    setTurn(data.turn);
+    setMessage(data.message || "");
+  } catch (err) {
+    console.error("Move failed:", err);
+    setMessage("Move failed. Try again.");
+  }
+};
 
-  // Reset the game
-  const resetGame = async () => {
-    try {
-      await fetch("http://127.0.0.1:5000/api/reset", { method: "POST" });
-      setMessage("");
-      fetchBoard();
-    } catch (err) {
-      console.error("Reset failed:", err);
-      setMessage("Reset failed. Try again.");
-    }
-  };
+// ✅ Reset the game
+const resetGame = async () => {
+  try {
+    await fetch("https://chess-game-xl5i.onrender.com/api/reset", {
+      method: "POST",
+    });
+    setMessage("");
+    fetchBoard();
+  } catch (err) {
+    console.error("Reset failed:", err);
+    setMessage("Reset failed. Try again.");
+  }
+};
+
 
   useEffect(() => {
     fetchBoard();
