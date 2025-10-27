@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from chess.chess_board import Board
+import os
+
+if os.environ.get("RENDER") == "true":
+    from waitress import serve
 
 app = Flask(__name__)
 CORS(app)
@@ -10,23 +14,10 @@ board = Board()
 @app.route("/api/board")
 def get_board():
     try:
-        # Try all common names for the board grid
-        if hasattr(board, "grid"):
-            grid = board.grid
-        elif hasattr(board, "board"):
-            grid = board.board
-        elif hasattr(board, "squares"):
-            grid = board.squares
-        elif hasattr(board, "state"):
-            grid = board.state
-        else:
-            raise AttributeError("Board object has no grid-like attribute")
-
         return jsonify({
-            "board": grid,
-            "turn": "w" if getattr(board, "white_to_move", True) else "b"
+            "board": board.board,
+            "turn": board.turn
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -37,7 +28,6 @@ def make_move():
         data = request.get_json()
         move_str = data.get("move")
 
-        # If invalid move input
         if not move_str or len(move_str) < 4:
             return jsonify({
                 "board": board_as_simple_chars(board),
@@ -55,9 +45,9 @@ def make_move():
                 "message": "Illegal move"
             }), 200
 
-        success = board.make_move(m)
+        board.make_move(m)
+        success = True
 
-        # 🧠 Determine game state message
         message = None
         if board.is_checkmate():
             message = f"Checkmate! {'White' if board.turn == 'b' else 'Black'} wins."
@@ -82,6 +72,14 @@ def make_move():
             "turn": board.turn
         }), 500
 
+
+@app.route("/api/reset", methods=["POST"])
+def reset_game():
+    global board
+    board = Board()
+    return jsonify({"message": "Game reset!"})
+
+
 def board_as_simple_chars(board):
     grid = []
     for r in range(8):
@@ -93,18 +91,9 @@ def board_as_simple_chars(board):
     return grid
 
 
-
-
-
-@app.route("/api/reset", methods=["POST"])
-def reset_game():
-    global board
-    board = Board()
-    return jsonify({"message": "Game reset!"})
-
-import os
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
-
+    if os.environ.get("RENDER") == "true":
+        serve(app, host="0.0.0.0", port=port)
+    else:
+        app.run(host="0.0.0.0", port=port, debug=True)
