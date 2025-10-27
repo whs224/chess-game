@@ -43,6 +43,7 @@ def coords_to_algebraic(rc: Tuple[int, int]) -> str:
 
 
 class Board:
+    
     def __init__(self) -> None:
         self.board: List[List[Optional[Piece]]] = [[None] * 8 for _ in range(8)]
         self.turn = WHITE
@@ -55,6 +56,73 @@ class Board:
         self.setup_starting_position()
 
     # --- Setup & helpers ---
+
+    def _snapshot(self):
+        return (
+            [row[:] for row in self.board],
+            self.turn,
+            set(self.castling_rights),
+            self.en_passant,
+            self.halfmove_clock,
+            self.fullmove_number,
+        )
+
+    def _restore(self, snap):
+        (
+            self.board,
+            self.turn,
+            self.castling_rights,
+            self.en_passant,
+            self.halfmove_clock,
+            self.fullmove_number,
+        ) = (
+            [row[:] for row in snap[0]],
+            snap[1],
+            set(snap[2]),
+            snap[3],
+            snap[4],
+            snap[5],
+        )
+
+    def _apply_move(self, move):
+        src_r, src_c = move.src
+        dst_r, dst_c = move.dst
+        piece = self.board[src_r][src_c]
+        self.board[src_r][src_c] = None
+
+        if move.is_en_passant:
+            self.board[src_r][dst_c] = None
+
+        if move.is_castle_king:
+            rook_src, rook_dst = (src_r, 7), (src_r, 5)
+            self.board[rook_dst[0]][rook_dst[1]] = self.board[rook_src[0]][rook_src[1]]
+            self.board[rook_src[0]][rook_src[1]] = None
+        elif move.is_castle_queen:
+            rook_src, rook_dst = (src_r, 0), (src_r, 3)
+            self.board[rook_dst[0]][rook_dst[1]] = self.board[rook_src[0]][rook_src[1]]
+            self.board[rook_src[0]][rook_src[1]] = None
+
+        if move.promotion:
+            piece = Piece(move.promotion, piece.color)
+
+        self.board[dst_r][dst_c] = piece
+        self.turn = WHITE if self.turn == BLACK else BLACK
+        if self.turn == WHITE:
+            self.fullmove_number += 1
+        self._increment_position_count()
+
+    def make_move(self, move):
+        self._apply_move(move)
+        return True
+
+    def all_legal_moves(self):
+        return self.generate_legal_moves(self.turn)
+
+    def is_checkmate(self):
+        return self.is_in_check(self.turn) and not self.all_legal_moves()
+
+    def is_stalemate(self):
+        return not self.is_in_check(self.turn) and not self.all_legal_moves()
 
     def setup_starting_position(self) -> None:
         self.board = [[None] * 8 for _ in range(8)]
@@ -304,7 +372,7 @@ class Board:
                 if m.src == src and m.dst == dst and m.piece and m.piece.type == "P" and m.promotion == "Q":
                     return m
         return None
-        # --- Position tracking ---
+    # --- Position tracking ---
 
     def _position_key(self) -> str:
         rows = []
@@ -332,3 +400,4 @@ class Board:
         key = self._position_key()
         self.position_counts[key] = self.position_counts.get(key, 0) + 1
 
+    
